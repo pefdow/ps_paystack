@@ -31,12 +31,15 @@ if (!defined('_PS_VERSION_')) {
 
 class Ps_Paystack extends Module
 {
+    protected $_html = '';
+    protected $_postErrors = [];
+
     public function __construct() {
         $this->name = "ps_paystack";
         $this->version = "0.0.1";
         $this->tab = 'payments_gateways';
         $this->author = "Adedayo Ajayi";
-        $this->ps_versions_compliancy = array('min' => '1.7.1.0', 'max' => _PS_VERSION_);
+        $this->ps_versions_compliancy = ['min' => '1.7.1.0', 'max' => _PS_VERSION_];
 
         $this->bootstrap = true;
         parent::__construct();
@@ -48,10 +51,133 @@ class Ps_Paystack extends Module
     }
     
     public function install() {
+        Configuration::updateValue('PS_PAYSTACK_TEST_MODE', 1);
         return parent::install();
     }
 
     public function uninstall() {
-        return parent::uninstall();
+        if (!Configuration::deleteByName('PS_PAYSTACK_TEST_SECRETKEY')
+            || !Configuration::deleteByName('PS_PAYSTACK_TEST_PUBLICKEY')
+            || !Configuration::deleteByName('PS_PAYSTACK_LIVE_PUBLICKEY')
+            || !Configuration::deleteByName('PS_PAYSTACK_LIVE_SECRETKEY')
+            || !Configuration::deleteByName('PS_PAYSTACK_TEST_MODE')
+            || !parent::uninstall()
+        ) {
+            return false;
+        }
+        return true;
     }
+
+    public function getContent() {
+        $this->_html = '';
+
+        if (Tools::isSubmit('btnSubmit')) {
+            
+        }
+
+        $this->_html .= $this->_displayPaystackInfo();
+        $this->_html .= $this->renderForm();
+
+        return $this->_html;
+    }
+
+    private function _displayPaystackInfo() {
+        return $this->display(__FILE__, 'infos.tpl');
+    }
+
+    public function renderForm() {
+        // Get default language
+        $defaultLang = (int)Configuration::get('PS_LANG_DEFAULT');
+
+        $fields_form = [
+            'form' => [
+                'legend' => [
+                    'title' => $this->trans('Paystack Configuration', [], 'Modules.PaystackPayment.Admin'),
+                    'icon' => 'icon-user'
+                ],
+                'input' => [
+                    [
+                        'type' => 'switch',
+                        'label' => $this->trans('Test Mode', [], 'Modules.PaystackPayment.Admin'),
+                        'name' => 'PS_PAYSTACK_TEST_MODE',
+                        'is_bool' => true,
+                        'required' => true,
+                         'values' => [
+                                [
+                                    'id' => 'active_on',
+                                    'value' => true,
+                                    'label' => $this->trans('True', [], 'Modules.PaystackPayment.Admin')
+                                ],
+                                [
+                                    'id' => 'active_off',
+                                    'value' => false,
+                                    'label' => $this->trans('False', [], 'Modules.PaystackPayment.Admin')
+                                ]
+                            ],
+                    ],
+                    [
+                        'type' => 'text',
+                        'label' => $this->trans('Test Secret key', [], 'Modules.PaystackPayment.Admin'),
+                        'name' => 'PS_PAYSTACK_TEST_SECRETKEY',
+                       
+                    ],
+                    [
+                        'type' => 'text',
+                        'label' => $this->trans('Test Public key', [], 'Modules.PaystackPayment.Admin'),
+                        'name' => 'PS_PAYSTACK_TEST_PUBLICKEY',
+                    ],
+                    [
+                        'type' => 'text',
+                        'label' => $this->trans('Live Secret key', [], 'Modules.PaystackPayment.Admin'),
+                        'name' => 'PS_PAYSTACK_LIVE_SECRETKEY',
+                       
+                    ],
+                    [
+                        'type' => 'text',
+                        'label' => $this->trans('Live Public key', [], 'Modules.PaystackPayment.Admin'),
+                        'name' => 'PS_PAYSTACK_LIVE_PUBLICKEY',
+                    ],  
+                ],
+                'submit' => [
+                    'title' => $this->trans('Save', [], 'Admin.Actions'),
+                ]
+            ]
+        ];
+
+        $helper = new HelperForm();
+
+        // Module, token and currentIndex
+        $helper->module = $this;
+        $helper->token = Tools::getAdminTokenLite('AdminModules');
+        $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
+
+        // Language
+        $helper->default_form_language = $defaultLang;
+        $helper->allow_employee_form_lang = $defaultLang;
+
+        // Title and toolbar
+        $helper->show_toolbar = false;
+        $helper->id = (int)Tools::getValue('id_carrier');
+        $helper->identifier = $this->identifier;
+        $helper->submit_action = 'btnSubmit';
+
+        $helper->tpl_vars = array(
+            'fields_value' => $this->getConfigFieldsValues(),
+        );
+
+        $this->fields_form = [];
+
+        return $helper->generateForm([$fields_form]);
+    }
+
+    public function getConfigFieldsValues() {
+        return [
+            'PS_PAYSTACK_TEST_SECRETKEY' => Tools::getValue('PS_PAYSTACK_TEST_SECRETKEY', Configuration::get('PS_PAYSTACK_TEST_SECRETKEY')),
+            'PS_PAYSTACK_TEST_PUBLICKEY' => Tools::getValue('PS_PAYSTACK_TEST_PUBLICKEY', Configuration::get('PS_PAYSTACK_TEST_PUBLICKEY')),
+            'PS_PAYSTACK_LIVE_SECRETKEY' => Tools::getValue('PS_PAYSTACK_LIVE_SECRETKEY', Configuration::get('PS_PAYSTACK_LIVE_SECRETKEY')),
+            'PS_PAYSTACK_LIVE_PUBLICKEY' => Tools::getValue('PS_PAYSTACK_LIVE_PUBLICKEY', Configuration::get('PS_PAYSTACK_LIVE_PUBLICKEY')),
+            'PS_PAYSTACK_TEST_MODE' => Tools::getValue('PS_PAYSTACK_TEST_MODE', Configuration::get('PS_PAYSTACK_TEST_MODE')),
+        ];
+    }
+
 }
