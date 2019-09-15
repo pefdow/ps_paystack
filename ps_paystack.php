@@ -52,6 +52,9 @@ class Ps_Paystack extends Module
     
     public function install() {
         Configuration::updateValue('PS_PAYSTACK_TEST_MODE', 1);
+        Configuration::updateValue('PS_PAYSTACK_FEE_RATE', 1.5);
+        Configuration::updateValue('PS_PAYSTACK_MAX_FEE', 2000);
+        Configuration::updateValue('PS_PAYSTACK_CHARGE_CUSTOMER', 0);
         return parent::install();
     }
 
@@ -61,6 +64,9 @@ class Ps_Paystack extends Module
             || !Configuration::deleteByName('PS_PAYSTACK_LIVE_PUBLICKEY')
             || !Configuration::deleteByName('PS_PAYSTACK_LIVE_SECRETKEY')
             || !Configuration::deleteByName('PS_PAYSTACK_TEST_MODE')
+            || !Configuration::deleteByName('PS_PAYSTACK_FEE_RATE')
+            || !Configuration::deleteByName('PS_PAYSTACK_MAX_FEE')
+            || !Configuration::deleteByName('PS_PAYSTACK_CHARGE_CUSTOMER')
             || !parent::uninstall()
         ) {
             return false;
@@ -105,6 +111,37 @@ class Ps_Paystack extends Module
                         'name' => 'PS_PAYSTACK_TEST_MODE',
                         'is_bool' => true,
                         'hint' => $this->trans('Switch between TEST mode and LIVE mode', array(), 'Modules.PaystackPayment.Admin'),
+                        'required' => true,
+                         'values' => [
+                                [
+                                    'id' => 'active_on',
+                                    'value' => true,
+                                    'label' => $this->trans('True', [], 'Modules.PaystackPayment.Admin')
+                                ],
+                                [
+                                    'id' => 'active_off',
+                                    'value' => false,
+                                    'label' => $this->trans('False', [], 'Modules.PaystackPayment.Admin')
+                                ]
+                            ],
+                    ],
+                    [
+                        'type' => 'text',
+                        'label' => $this->trans('Transaction Fee Rate (%)', [], 'Modules.PaystackPayment.Admin'),
+                        'name' => 'PS_PAYSTACK_FEE_RATE',
+                       
+                    ],
+                    [
+                        'type' => 'text',
+                        'label' => $this->trans('Maximum Transaction Fee', [], 'Modules.PaystackPayment.Admin'),
+                        'name' => 'PS_PAYSTACK_MAX_FEE',
+                    ],
+                    [
+                        'type' => 'switch',
+                        'label' => $this->trans('Charge Customer', [], 'Modules.PaystackPayment.Admin'),
+                        'name' => 'PS_PAYSTACK_CHARGE_CUSTOMER',
+                        'is_bool' => true,
+                        'hint' => $this->trans('Add paystack fee to client\'s total amount.', array(), 'Modules.PaystackPayment.Admin'),
                         'required' => true,
                          'values' => [
                                 [
@@ -209,6 +246,9 @@ class Ps_Paystack extends Module
             'PS_PAYSTACK_LIVE_SECRETKEY' => Tools::getValue('PS_PAYSTACK_LIVE_SECRETKEY', Configuration::get('PS_PAYSTACK_LIVE_SECRETKEY')),
             'PS_PAYSTACK_LIVE_PUBLICKEY' => Tools::getValue('PS_PAYSTACK_LIVE_PUBLICKEY', Configuration::get('PS_PAYSTACK_LIVE_PUBLICKEY')),
             'PS_PAYSTACK_TEST_MODE' => Tools::getValue('PS_PAYSTACK_TEST_MODE', Configuration::get('PS_PAYSTACK_TEST_MODE')),
+            'PS_PAYSTACK_FEE_RATE' => Tools::getValue('PS_PAYSTACK_FEE_RATE', Configuration::get('PS_PAYSTACK_FEE_RATE')),
+            'PS_PAYSTACK_MAX_FEE' => Tools::getValue('PS_PAYSTACK_MAX_FEE', Configuration::get('PS_PAYSTACK_MAX_FEE')),
+            'PS_PAYSTACK_CHARGE_CUSTOMER' => Tools::getValue('PS_PAYSTACK_CHARGE_CUSTOMER', Configuration::get('PS_PAYSTACK_CHARGE_CUSTOMER')),
         ];
     }
 
@@ -220,6 +260,9 @@ class Ps_Paystack extends Module
             Configuration::updateValue('PS_PAYSTACK_LIVE_SECRETKEY', Tools::getValue('PS_PAYSTACK_LIVE_SECRETKEY'));
             Configuration::updateValue('PS_PAYSTACK_LIVE_PUBLICKEY', Tools::getValue('PS_PAYSTACK_LIVE_PUBLICKEY'));
             Configuration::updateValue('PS_PAYSTACK_TEST_MODE', Tools::getValue('PS_PAYSTACK_TEST_MODE'));
+            Configuration::updateValue('PS_PAYSTACK_FEE_RATE', Tools::getValue('PS_PAYSTACK_FEE_RATE'));
+            Configuration::updateValue('PS_PAYSTACK_MAX_FEE', Tools::getValue('PS_PAYSTACK_MAX_FEE'));
+            Configuration::updateValue('PS_PAYSTACK_CHARGE_CUSTOMER', Tools::getValue('PS_PAYSTACK_CHARGE_CUSTOMER'));
         }
         $this->_html .= $this->displayConfirmation($this->trans('Settings updated', array(), 'Admin.Notifications.Success'));
     }
