@@ -92,10 +92,10 @@ class Ps_Paystack extends Module
         // Get default language
         $defaultLang = (int)Configuration::get('PS_LANG_DEFAULT');
 
-        $fields_form = [
+        $fields_general_form = [
             'form' => [
                 'legend' => [
-                    'title' => $this->trans('Paystack Configuration', [], 'Modules.PaystackPayment.Admin'),
+                    'title' => $this->trans('Paystack General Configuration', [], 'Modules.PaystackPayment.Admin'),
                     'icon' => 'icon-user'
                 ],
                 'input' => [
@@ -104,6 +104,7 @@ class Ps_Paystack extends Module
                         'label' => $this->trans('Test Mode', [], 'Modules.PaystackPayment.Admin'),
                         'name' => 'PS_PAYSTACK_TEST_MODE',
                         'is_bool' => true,
+                        'hint' => $this->trans('Switch between TEST mode and LIVE mode', array(), 'Modules.PaystackPayment.Admin'),
                         'required' => true,
                          'values' => [
                                 [
@@ -118,6 +119,20 @@ class Ps_Paystack extends Module
                                 ]
                             ],
                     ],
+                ],
+                'submit' => [
+                    'title' => $this->trans('Save', [], 'Admin.Actions'),
+                ]
+            ]
+        ];
+
+        $fields_test_form = [
+            'form' => [
+                'legend' => [
+                    'title' => $this->trans('Paystack Test Configuration', [], 'Modules.PaystackPayment.Admin'),
+                    'icon' => 'icon-cogs'
+                ],
+                'input' => [
                     [
                         'type' => 'text',
                         'label' => $this->trans('Test Secret key', [], 'Modules.PaystackPayment.Admin'),
@@ -128,7 +143,21 @@ class Ps_Paystack extends Module
                         'type' => 'text',
                         'label' => $this->trans('Test Public key', [], 'Modules.PaystackPayment.Admin'),
                         'name' => 'PS_PAYSTACK_TEST_PUBLICKEY',
-                    ],
+                    ], 
+                ],
+                'submit' => [
+                    'title' => $this->trans('Save', [], 'Admin.Actions'),
+                ]
+            ]
+        ];
+
+        $fields_live_form = [
+            'form' => [
+                'legend' => [
+                    'title' => $this->trans('Paystack Live Configuration', [], 'Modules.PaystackPayment.Admin'),
+                    'icon' => 'icon-cogs'
+                ],
+                'input' => [
                     [
                         'type' => 'text',
                         'label' => $this->trans('Live Secret key', [], 'Modules.PaystackPayment.Admin'),
@@ -170,7 +199,7 @@ class Ps_Paystack extends Module
 
         $this->fields_form = [];
 
-        return $helper->generateForm([$fields_form]);
+        return $helper->generateForm([$fields_general_form, $fields_test_form, $fields_live_form]);
     }
 
     public function getConfigFieldsValues() {
