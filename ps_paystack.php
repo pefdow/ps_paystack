@@ -72,17 +72,20 @@ class Ps_Paystack extends Module
         $this->_html = '';
 
         if (Tools::isSubmit('btnSubmit')) {
-            
+            $this->_postValidation();
+            if (!count($this->_postErrors)) {
+                $this->_postProcess();
+            } else {
+                foreach ($this->_postErrors as $err) {
+                    $this->_html .= $this->displayError($err);
+                }
+            }
         }
 
         $this->_html .= $this->_displayPaystackInfo();
         $this->_html .= $this->renderForm();
 
         return $this->_html;
-    }
-
-    private function _displayPaystackInfo() {
-        return $this->display(__FILE__, 'infos.tpl');
     }
 
     public function renderForm() {
@@ -178,6 +181,44 @@ class Ps_Paystack extends Module
             'PS_PAYSTACK_LIVE_PUBLICKEY' => Tools::getValue('PS_PAYSTACK_LIVE_PUBLICKEY', Configuration::get('PS_PAYSTACK_LIVE_PUBLICKEY')),
             'PS_PAYSTACK_TEST_MODE' => Tools::getValue('PS_PAYSTACK_TEST_MODE', Configuration::get('PS_PAYSTACK_TEST_MODE')),
         ];
+    }
+
+    protected function _postProcess()
+    {
+        if (Tools::isSubmit('btnSubmit')) {
+            Configuration::updateValue('PS_PAYSTACK_TEST_SECRETKEY', Tools::getValue('PS_PAYSTACK_TEST_SECRETKEY'));
+            Configuration::updateValue('PS_PAYSTACK_TEST_PUBLICKEY', Tools::getValue('PS_PAYSTACK_TEST_PUBLICKEY'));
+            Configuration::updateValue('PS_PAYSTACK_LIVE_SECRETKEY', Tools::getValue('PS_PAYSTACK_LIVE_SECRETKEY'));
+            Configuration::updateValue('PS_PAYSTACK_LIVE_PUBLICKEY', Tools::getValue('PS_PAYSTACK_LIVE_PUBLICKEY'));
+            Configuration::updateValue('PS_PAYSTACK_TEST_MODE', Tools::getValue('PS_PAYSTACK_TEST_MODE'));
+        }
+        $this->_html .= $this->displayConfirmation($this->trans('Settings updated', array(), 'Admin.Notifications.Success'));
+    }
+
+    private function _displayPaystackInfo() {
+        return $this->display(__FILE__, 'infos.tpl');
+    }
+
+    private function _postValidation()
+    {
+        if (Tools::isSubmit('btnSubmit')) {
+            if ((int)Tools::getValue('PS_PAYSTACK_TEST_MODE') == 1) {
+                if (!Tools::getValue('PS_PAYSTACK_TEST_SECRETKEY')) {
+                    $this->_postErrors[] = $this->trans('The "Test Secret Key" field is required.', array(),'Modules.PaystackPayment.Admin');
+                }
+                if (!Tools::getValue('PS_PAYSTACK_TEST_PUBLICKEY')) {
+                    $this->_postErrors[] = $this->trans('The "Test Public Key" field is required.', array(), 'Modules.PaystackPayment.Admin');
+                }
+            } else {
+                if (!Tools::getValue('PS_PAYSTACK_LIVE_SECRETKEY')) {
+                    $this->_postErrors[] = $this->trans('The "Live Secret Key" field is required.', array(),'Modules.PaystackPayment.Admin');
+                }
+                if (!Tools::getValue('PS_PAYSTACK_LIVE_PUBLICKEY')) {
+                    $this->_postErrors[] = $this->trans('The "Live Public Key" field is required.', array(), 'Modules.PaystackPayment.Admin');
+                }
+            }
+            
+        }
     }
 
 }

@@ -25,6 +25,6 @@
 
 <div class="alert alert-info">
     <img src="../modules/ps_paystack/logo.png" style="float:left; margin-right:15px;" height="40">
-    <p><strong>This module allows you to accept secure payments using Paystack.</strong></p>
-    <p>If the customer chooses to pay via Paystack, the order's status will change to 'Paid via Paystack'.</p>
+    <p><strong>{l s="This module allows you to accept secure payments using Paystack." d='Modules.PaystackPayment.Admin'}</strong></p>
+    <p>{l s="If the customer chooses to pay via Paystack, the order's status will change to 'Paid via Paystack'." d='Modules.PaystackPayment.Admin'}</p>
 </div>
