@@ -24,12 +24,13 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class Ps_Paystack extends Module
+class Ps_Paystack extends PaymentModule
 {
     protected $_html = '';
     protected $_postErrors = [];
@@ -40,6 +41,9 @@ class Ps_Paystack extends Module
         $this->tab = 'payments_gateways';
         $this->author = "Adedayo Ajayi";
         $this->ps_versions_compliancy = ['min' => '1.7.1.0', 'max' => _PS_VERSION_];
+
+        $this->currencies = true;
+        $this->currencies_mode = 'checkbox';
 
         $this->bootstrap = true;
         parent::__construct();
@@ -55,7 +59,7 @@ class Ps_Paystack extends Module
         Configuration::updateValue('PS_PAYSTACK_FEE_RATE', 1.5);
         Configuration::updateValue('PS_PAYSTACK_MAX_FEE', 2000);
         Configuration::updateValue('PS_PAYSTACK_CHARGE_CUSTOMER', 0);
-        return parent::install();
+        return parent::install() && $this->registerHook('paymentOptions') && $this->registerHook('paymentReturn');
     }
 
     public function uninstall() {
@@ -225,6 +229,7 @@ class Ps_Paystack extends Module
         $helper->allow_employee_form_lang = $defaultLang;
 
         // Title and toolbar
+        $helper->title = $this->displayName;
         $helper->show_toolbar = false;
         $helper->id = (int)Tools::getValue('id_carrier');
         $helper->identifier = $this->identifier;
@@ -251,6 +256,40 @@ class Ps_Paystack extends Module
             'PS_PAYSTACK_CHARGE_CUSTOMER' => Tools::getValue('PS_PAYSTACK_CHARGE_CUSTOMER', Configuration::get('PS_PAYSTACK_CHARGE_CUSTOMER')),
         ];
     }
+
+    public function hookPaymentOptions($params) {
+        if (!$this->active) {
+            return;
+        }
+
+        $this->smarty->assign(
+            $this->getTemplateVarInfos()
+        );
+
+        $newOption = new PaymentOption();
+        $newOption->setModuleName($this->name)
+                ->setCallToActionText($this->trans('Pay via Paystack', [], 'Modules.PaystackPayment.Admin'))
+                ->setAction($this->context->link->getModuleLink($this->name, 'validation', [], true))
+                ->setAdditionalInformation($this->fetch('module:ps_paystack/views/templates/front/paystack_payment_infos.tpl'));
+
+        return [$newOption];
+    }
+
+    public function hookPaymentReturn($params)
+    {
+        if (!$this->active) {
+            return;
+        }
+
+        return $this->fetch('module:ps_paystack/views/templates/hook/payment_return.tpl');
+    }
+
+   public function getTemplateVarInfos() {
+       return [
+           'message' => 'Wecome to Paystack Gateway.'
+       ];
+   }
+
 
     protected function _postProcess()
     {
