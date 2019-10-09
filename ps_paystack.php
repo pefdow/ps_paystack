@@ -35,12 +35,14 @@ class Ps_Paystack extends PaymentModule
     protected $_html = '';
     protected $_postErrors = [];
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->name = "ps_paystack";
         $this->version = "0.0.1";
         $this->tab = 'payments_gateways';
         $this->author = "Adedayo Ajayi";
         $this->ps_versions_compliancy = ['min' => '1.7.1.0', 'max' => _PS_VERSION_];
+        $this->controllers = array('validation', 'verification');
 
         $this->currencies = true;
         $this->currencies_mode = 'checkbox';
@@ -48,13 +50,19 @@ class Ps_Paystack extends PaymentModule
         $this->bootstrap = true;
         parent::__construct();
 
-        $this->displayName = $this->trans('Paystack Payments');
+        $this->displayName = $this->trans('Paystack Payment');
         $this->description = $this->trans('Accept payments via Paystack.');
 
         $this->confirmUninstall = $this->trans('Are you sure you want to uninstall?');
     }
-    
-    public function install() {
+
+    public function install()
+    {
+        // Registration order status
+        if (!$this->installOrderState()) {
+            return false;
+        }
+
         Configuration::updateValue('PS_PAYSTACK_TEST_MODE', 1);
         Configuration::updateValue('PS_PAYSTACK_FEE_RATE', 1.5);
         Configuration::updateValue('PS_PAYSTACK_MAX_FEE', 2000);
@@ -62,8 +70,10 @@ class Ps_Paystack extends PaymentModule
         return parent::install() && $this->registerHook('paymentOptions') && $this->registerHook('paymentReturn');
     }
 
-    public function uninstall() {
-        if (!Configuration::deleteByName('PS_PAYSTACK_TEST_SECRETKEY')
+    public function uninstall()
+    {
+        if (
+            !Configuration::deleteByName('PS_PAYSTACK_TEST_SECRETKEY')
             || !Configuration::deleteByName('PS_PAYSTACK_TEST_PUBLICKEY')
             || !Configuration::deleteByName('PS_PAYSTACK_LIVE_PUBLICKEY')
             || !Configuration::deleteByName('PS_PAYSTACK_LIVE_SECRETKEY')
@@ -78,7 +88,8 @@ class Ps_Paystack extends PaymentModule
         return true;
     }
 
-    public function getContent() {
+    public function getContent()
+    {
         $this->_html = '';
 
         if (Tools::isSubmit('btnSubmit')) {
@@ -98,9 +109,10 @@ class Ps_Paystack extends PaymentModule
         return $this->_html;
     }
 
-    public function renderForm() {
+    public function renderForm()
+    {
         // Get default language
-        $defaultLang = (int)Configuration::get('PS_LANG_DEFAULT');
+        $defaultLang = (int) Configuration::get('PS_LANG_DEFAULT');
 
         $fields_general_form = [
             'form' => [
@@ -116,24 +128,24 @@ class Ps_Paystack extends PaymentModule
                         'is_bool' => true,
                         'hint' => $this->trans('Switch between TEST mode and LIVE mode', array(), 'Modules.PaystackPayment.Admin'),
                         'required' => true,
-                         'values' => [
-                                [
-                                    'id' => 'active_on',
-                                    'value' => true,
-                                    'label' => $this->trans('True', [], 'Modules.PaystackPayment.Admin')
-                                ],
-                                [
-                                    'id' => 'active_off',
-                                    'value' => false,
-                                    'label' => $this->trans('False', [], 'Modules.PaystackPayment.Admin')
-                                ]
+                        'values' => [
+                            [
+                                'id' => 'active_on',
+                                'value' => true,
+                                'label' => $this->trans('True', [], 'Modules.PaystackPayment.Admin')
                             ],
+                            [
+                                'id' => 'active_off',
+                                'value' => false,
+                                'label' => $this->trans('False', [], 'Modules.PaystackPayment.Admin')
+                            ]
+                        ],
                     ],
                     [
                         'type' => 'text',
                         'label' => $this->trans('Transaction Fee Rate (%)', [], 'Modules.PaystackPayment.Admin'),
                         'name' => 'PS_PAYSTACK_FEE_RATE',
-                       
+
                     ],
                     [
                         'type' => 'text',
@@ -147,18 +159,18 @@ class Ps_Paystack extends PaymentModule
                         'is_bool' => true,
                         'hint' => $this->trans('Add paystack fee to client\'s total amount.', array(), 'Modules.PaystackPayment.Admin'),
                         'required' => true,
-                         'values' => [
-                                [
-                                    'id' => 'active_on',
-                                    'value' => true,
-                                    'label' => $this->trans('True', [], 'Modules.PaystackPayment.Admin')
-                                ],
-                                [
-                                    'id' => 'active_off',
-                                    'value' => false,
-                                    'label' => $this->trans('False', [], 'Modules.PaystackPayment.Admin')
-                                ]
+                        'values' => [
+                            [
+                                'id' => 'active_on',
+                                'value' => true,
+                                'label' => $this->trans('True', [], 'Modules.PaystackPayment.Admin')
                             ],
+                            [
+                                'id' => 'active_off',
+                                'value' => false,
+                                'label' => $this->trans('False', [], 'Modules.PaystackPayment.Admin')
+                            ]
+                        ],
                     ],
                 ],
                 'submit' => [
@@ -178,13 +190,13 @@ class Ps_Paystack extends PaymentModule
                         'type' => 'text',
                         'label' => $this->trans('Test Secret key', [], 'Modules.PaystackPayment.Admin'),
                         'name' => 'PS_PAYSTACK_TEST_SECRETKEY',
-                       
+
                     ],
                     [
                         'type' => 'text',
                         'label' => $this->trans('Test Public key', [], 'Modules.PaystackPayment.Admin'),
                         'name' => 'PS_PAYSTACK_TEST_PUBLICKEY',
-                    ], 
+                    ],
                 ],
                 'submit' => [
                     'title' => $this->trans('Save', [], 'Admin.Actions'),
@@ -203,13 +215,13 @@ class Ps_Paystack extends PaymentModule
                         'type' => 'text',
                         'label' => $this->trans('Live Secret key', [], 'Modules.PaystackPayment.Admin'),
                         'name' => 'PS_PAYSTACK_LIVE_SECRETKEY',
-                       
+
                     ],
                     [
                         'type' => 'text',
                         'label' => $this->trans('Live Public key', [], 'Modules.PaystackPayment.Admin'),
                         'name' => 'PS_PAYSTACK_LIVE_PUBLICKEY',
-                    ],  
+                    ],
                 ],
                 'submit' => [
                     'title' => $this->trans('Save', [], 'Admin.Actions'),
@@ -222,7 +234,7 @@ class Ps_Paystack extends PaymentModule
         // Module, token and currentIndex
         $helper->module = $this;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
-        $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
+        $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false) . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name;
 
         // Language
         $helper->default_form_language = $defaultLang;
@@ -231,7 +243,7 @@ class Ps_Paystack extends PaymentModule
         // Title and toolbar
         $helper->title = $this->displayName;
         $helper->show_toolbar = false;
-        $helper->id = (int)Tools::getValue('id_carrier');
+        $helper->id = (int) Tools::getValue('id_carrier');
         $helper->identifier = $this->identifier;
         $helper->submit_action = 'btnSubmit';
 
@@ -244,7 +256,8 @@ class Ps_Paystack extends PaymentModule
         return $helper->generateForm([$fields_general_form, $fields_test_form, $fields_live_form]);
     }
 
-    public function getConfigFieldsValues() {
+    public function getConfigFieldsValues()
+    {
         return [
             'PS_PAYSTACK_TEST_SECRETKEY' => Tools::getValue('PS_PAYSTACK_TEST_SECRETKEY', Configuration::get('PS_PAYSTACK_TEST_SECRETKEY')),
             'PS_PAYSTACK_TEST_PUBLICKEY' => Tools::getValue('PS_PAYSTACK_TEST_PUBLICKEY', Configuration::get('PS_PAYSTACK_TEST_PUBLICKEY')),
@@ -257,20 +270,21 @@ class Ps_Paystack extends PaymentModule
         ];
     }
 
-    public function hookPaymentOptions($params) {
+    public function hookPaymentOptions($params)
+    {
         if (!$this->active) {
             return;
         }
 
-        $this->smarty->assign(
-            $this->getTemplateVarInfos()
-        );
+        $params = $this->getTemplateVarInfos();
+        $this->smarty->assign($params);
 
         $newOption = new PaymentOption();
         $newOption->setModuleName($this->name)
-                ->setCallToActionText($this->trans('Pay via Paystack', [], 'Modules.PaystackPayment.Admin'))
-                ->setAction($this->context->link->getModuleLink($this->name, 'validation', [], true))
-                ->setAdditionalInformation($this->fetch('module:ps_paystack/views/templates/front/paystack_payment_infos.tpl'));
+            ->setCallToActionText($this->trans('Pay via Paystack', [], 'Modules.PaystackPayment.Admin'))
+            ->setAction($this->context->link->getModuleLink($this->name, 'validation', [], true))
+            ->setAdditionalInformation($this->fetch('module:ps_paystack/views/templates/front/payment_infos.tpl'))
+            ->setInputs($this->_generateInputs($params));
 
         return [$newOption];
     }
@@ -284,12 +298,97 @@ class Ps_Paystack extends PaymentModule
         return $this->fetch('module:ps_paystack/views/templates/hook/payment_return.tpl');
     }
 
-   public function getTemplateVarInfos() {
-       return [
-           'message' => 'Wecome to Paystack Gateway.'
-       ];
-   }
+    public function getTemplateVarInfos()
+    {
+        $paystack_public_key = $this->getPublicKey();
+        $paystack_secret_key = $this->getSecretKey();
 
+        if ($paystack_public_key == '' || $paystack_secret_key == '') {
+            return; // Todo:: invalid setup
+        }
+
+        $cart = $this->context->cart;
+        $customer = new Customer((int) ($cart->id_customer));
+        $amount = $cart->getOrderTotal(true, Cart::BOTH);
+        $currency_order = new Currency($cart->id_currency);
+
+        $params = array(
+            "reference"   => 'KDN' . $cart->id . 'PR' . time(),
+            "amount"      => number_format($amount, 2),
+            "total_amount" => $amount * 100,
+            "display_amount" => Tools::displayPrice($amount, $currency_order, false),
+            "currency"    => $currency_order->iso_code,
+            "email"       => $customer->email,
+        );
+
+        return $params;
+    }
+
+    public function installOrderState()
+    {
+        $states = [
+            'PS_OS_PAYSTACK_WAITING' => [
+                'name' => 'Awaiting PayStack payment',
+                'send_email' => false,
+                'color' => '#4169E1',
+                'hidden' => false,
+                'delivery' => false,
+                'logable' => false,
+                'invoice' => false,
+                'shipped' => false,
+                'paid' => false,
+                'pdf_invoice' => false,
+                'pdf_delivery' => false,
+                'unremovable' => true,
+            ],
+            'PS_OS_PAYSTACK_PAID' => [
+                'name' => 'Paid via PayStack',
+                'send_email' => true,
+                'color' => '#0CA4DA',
+                'hidden' => false,
+                'delivery' => false,
+                'logable' => true,
+                'invoice' => true,
+                'shipped' => false,
+                'paid' => true,
+                'pdf_invoice' => true,
+                'pdf_delivery' => false,
+                'unremovable' => true,
+                'template' => 'payment'
+            ]
+        ];
+
+        foreach ($states as $key => $state) {
+            if (
+                !Configuration::get($key)
+                || !Validate::isLoadedObject(new OrderState(Configuration::get($key)))
+            ) {
+                $order_state = new OrderState();
+                $order_state->module_name = $this->name;
+                $order_state->name = array();
+                foreach (Language::getLanguages() as $language) {
+                    $order_state->name[$language['id_lang']] = $state['name'];
+                    if (isset($state['template'])) {
+                        $order_state->template = $state['template'];
+                    }
+                }
+                $order_state->send_email = $state['send_email'];
+                $order_state->color = $state['color'];
+                $order_state->hidden = $state['hidden'];
+                $order_state->delivery = $state['delivery'];
+                $order_state->logable = $state['logable'];
+                $order_state->invoice = $state['invoice'];
+                $order_state->shipped = $state['shipped'];
+                $order_state->paid = $state['paid'];
+                $order_state->pdf_invoice = $state['pdf_invoice'];
+                $order_state->pdf_delivery = $state['pdf_delivery'];
+                $order_state->unremovable = $state['unremovable'];
+                $order_state->add();
+                Configuration::updateValue($key, (int) $order_state->id);
+            }
+        }
+        return true;
+    }
 
     protected function _postProcess()
     {
@@ -306,30 +405,68 @@ class Ps_Paystack extends PaymentModule
         $this->_html .= $this->displayConfirmation($this->trans('Settings updated', array(), 'Admin.Notifications.Success'));
     }
 
-    private function _displayPaystackInfo() {
+    private function _displayPaystackInfo()
+    {
         return $this->display(__FILE__, 'infos.tpl');
     }
 
     private function _postValidation()
     {
         if (Tools::isSubmit('btnSubmit')) {
-            if ((int)Tools::getValue('PS_PAYSTACK_TEST_MODE') == 1) {
+            if ((int) Tools::getValue('PS_PAYSTACK_TEST_MODE') == 1) {
                 if (!Tools::getValue('PS_PAYSTACK_TEST_SECRETKEY')) {
-                    $this->_postErrors[] = $this->trans('The "Test Secret Key" field is required.', array(),'Modules.PaystackPayment.Admin');
+                    $this->_postErrors[] = $this->trans('The "Test Secret Key" field is required.', [], 'Modules.PaystackPayment.Admin');
                 }
                 if (!Tools::getValue('PS_PAYSTACK_TEST_PUBLICKEY')) {
-                    $this->_postErrors[] = $this->trans('The "Test Public Key" field is required.', array(), 'Modules.PaystackPayment.Admin');
+                    $this->_postErrors[] = $this->trans('The "Test Public Key" field is required.', [], 'Modules.PaystackPayment.Admin');
                 }
             } else {
                 if (!Tools::getValue('PS_PAYSTACK_LIVE_SECRETKEY')) {
-                    $this->_postErrors[] = $this->trans('The "Live Secret Key" field is required.', array(),'Modules.PaystackPayment.Admin');
+                    $this->_postErrors[] = $this->trans('The "Live Secret Key" field is required.', [], 'Modules.PaystackPayment.Admin');
                 }
                 if (!Tools::getValue('PS_PAYSTACK_LIVE_PUBLICKEY')) {
-                    $this->_postErrors[] = $this->trans('The "Live Public Key" field is required.', array(), 'Modules.PaystackPayment.Admin');
+                    $this->_postErrors[] = $this->trans('The "Live Public Key" field is required.', [], 'Modules.PaystackPayment.Admin');
                 }
             }
-            
         }
     }
 
+    private function _generateInputs($params)
+    {
+        $inputs = [];
+
+        foreach ($params as $key => $value) {
+            $inputs[$key] = [
+                'name' => $key,
+                'type' => 'hidden',
+                'value' => $value
+            ];
+        }
+
+        return $inputs;
+    }
+
+    public function getSecretKey()
+    {
+        $paystack_mode = Configuration::get('PS_PAYSTACK_TEST_MODE');
+        $paystack_key = $paystack_mode == 1 ? Configuration::get('PS_PAYSTACK_TEST_SECRETKEY') : Configuration::get('PS_PAYSTACK_LIVE_SECRETKEY');
+
+        if ($paystack_key == '') {
+            throw new PrestaShopException('Paystack secret key not set.');
+        }
+
+        return $paystack_key;
+    }
+
+    public function getPublicKey()
+    {
+        $paystack_mode = Configuration::get('PS_PAYSTACK_TEST_MODE');
+        $paystack_key = $paystack_mode == 1 ? Configuration::get('PS_PAYSTACK_TEST_PUBLICKEY') : Configuration::get('PS_PAYSTACK_LIVE_PUBLICKEY');
+
+        if ($paystack_key == '') {
+            throw new PrestaShopException('Paystack public key not set.');
+        }
+
+        return $paystack_key;
+    }
 }

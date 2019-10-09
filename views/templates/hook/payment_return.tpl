@@ -25,5 +25,5 @@
 
 <p>
     {l s='Your order has been placed.' d='Modules.PaystackPayment.Shop'}<br/>
-    {l s='You paid via Paystack:' d='Modules.PaystackPayment.Shop'}
+    {l s='You paid via Paystack.' d='Modules.PaystackPayment.Shop'}
 </p>

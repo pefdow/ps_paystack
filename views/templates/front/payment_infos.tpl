@@ -24,10 +24,18 @@
 *}
 
 <section>
-  <p>{l s='Please send us your check following these rules:' d='Modules.Checkpayment.Shop'}
+  <p>{l s='Please send us your check following these rules:' d='Modules.PaystackPayment.Admin'}
     <dl>
-      <dt>{l s='Message' d='Modules.Checkpayment.Shop'}</dt>
-      <dd>{$message}</dd>
+      <dt>{l s='Payment Reference' d='Modules.PaystackPayment.Admin'}</dt>
+      <dd>{$reference}</dd>
+    </dl>
+    <dl>
+      <dt>{l s='Email' d='Modules.PaystackPayment.Admin'}</dt>
+      <dd>{$email}</dd>
+    </dl>
+    <dl>
+      <dt>{l s='Amount' d='Modules.PaystackPayment.Admin'}</dt>
+      <dd>{$display_amount}</dd>
     </dl>
   </p>
 </section>

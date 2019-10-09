@@ -24,9 +24,12 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+use \Yabacon\Paystack;
+
 class Ps_PaystackValidationModuleFrontController extends ModuleFrontController
 {
-    public function postProcess() {
+    public function postProcess()
+    {
         $cart = $this->context->cart;
 
         if ($cart->id_customer == 0 || $cart->id_address_delivery == 0 || $cart->id_address_invoice == 0 || !$this->module->active) {
@@ -52,15 +55,45 @@ class Ps_PaystackValidationModuleFrontController extends ModuleFrontController
             Tools::redirect('index.php?controller=order&step=1');
         }
 
-        $currency = $this->context->currency;
-        $total = (float)$cart->getOrderTotal(true, Cart::BOTH);
+        $total = (float) $cart->getOrderTotal(true, Cart::BOTH);
 
-        // place order
-        $this->module->validateOrder((int)$this->context->cart->id, Configuration::get('PS_OS_PREPARATION'), $total, $this->module->displayName, null, array(), null, false, $customer->secure_key);
+        $callback_url = $this->context->link->getModuleLink(
+            $this->module->name,
+            'verification',
+            [
+                'id_cart' => (int) $cart->id,
+                'total' => $total,
+                'key' => $customer->secure_key,
+            ],
+            true
+        );
 
-        $redirect1 = __PS_BASE_URI__.'order-confirmation.php?key='.$customer->secure_key.'&id_cart='.(int)$this->context->cart->id.'&id_module='.(int)$this->module->id.'&id_order='.(int)$this->module->currentOrder;
-        $redirect2 = 'index.php?controller=order-confirmation&id_cart='.(int)$cart->id.'&id_module='.(int)$this->module->id.'&id_order='.$this->module->currentOrder.'&key='.$customer->secure_key;
+        if ($usePaystack = true) {
 
-        Tools::redirectLink($redirect2);
+            $paystack_key = $this->module->getSecretKey();
+
+            try {
+                $paystack = new Paystack($paystack_key);
+                $paystack->disableFileGetContentsFallback();
+
+                $txn = $paystack->transaction->initialize([
+                    'amount' => Tools::getValue('total_amount'),
+                    'email' => Tools::getValue('email'),
+                    'reference' => Tools::getValue('reference'),
+                    'callback_url' => $callback_url,
+                ]);
+            } catch (Exception $e) {
+                // Todo:: throw error & redirect back
+                die($e->getMessage());
+            }
+
+            if (!$txn->status) {
+                die($txn->message);
+            }
+
+            Tools::redirectLink($txn->data->authorization_url);
+        } else {
+            Tools::redirectLink($callback_url);
+        }
     }
 }
